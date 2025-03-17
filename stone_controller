@@ -1,0 +1,42 @@
+extends RigidBody2D
+
+var controller
+var trigger_pos
+var x_coordinate
+var y_coordinate
+var collision_count = 0
+var max_speed =  1000.0
+
+var ork_idle
+var stamina_bar
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	self.mass = 0.3
+	ork_idle = get_parent().get_node('Throwing_Animations').get_node('Ork_Idle')
+	stamina_bar = get_parent().get_node('InGame_UI').get_node('StaminaBar')
+	controller = get_parent().get_node("Controller")
+	self.contact_monitor = true
+	self.max_contacts_reported = 100000
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(_delta):
+	if controller != null:
+		trigger_pos = controller.get_child_position()
+		x_coordinate = trigger_pos.x
+		y_coordinate = trigger_pos.y
+		
+	var current_speed = self.linear_velocity.length()
+	if current_speed > max_speed:
+		self.linear_velocity = self.linear_velocity.normalized() * max_speed
+
+func _input(event):
+	if event.is_action_released("control1") && ork_idle.prethrow_flag == true && stamina_bar.value >= 20:
+		stamina_bar.value -= 20
+		var launchForce = Vector2(x_coordinate * 60, y_coordinate * 60)
+		# Cap the magnitude of the launchForce
+		var maxLaunchForce = 1000.0 # Change this to your desired maximum force
+		var launchForceMagnitude = launchForce.length()
+		if launchForceMagnitude > maxLaunchForce:
+			launchForce = launchForce.normalized() * maxLaunchForce
+		self.apply_impulse(launchForce, launchForce)
